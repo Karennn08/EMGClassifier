@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/tvBleStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="BLE: Desconectado"
+        android:textSize="18sp"/>
+
+    <TextView
+        android:id="@+id/tvPrediction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Gesto: -"
+        android:textSize="22sp"
+        android:layout_marginTop="8dp"/>
+
+    <TextView
+        android:id="@+id/tvProbabilities"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Probabilidades: -"
+        android:layout_marginTop="4dp"/>
+
+    <TextView
+        android:id="@+id/tvLabelRelaxed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Relajado"
+        android:textSize="12sp"
+        android:layout_marginTop="8dp"/>
+
+    <ProgressBar
+        android:id="@+id/pbRelaxed"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"/>
+
+    <TextView
+        android:id="@+id/tvLabelFist"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Puño cerrado"
+        android:textSize="12sp"
+        android:layout_marginTop="4dp"/>
+
+    <ProgressBar
+        android:id="@+id/pbFist"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"/>
+
+    <TextView
+        android:id="@+id/tvLabelThumb"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pulgar arriba"
+        android:textSize="12sp"
+        android:layout_marginTop="4dp"/>
+
+    <ProgressBar
+        android:id="@+id/pbThumb"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"/>
+
+    <TextView
+        android:id="@+id/tvPacketCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Paquetes: 0"
+        android:layout_marginTop="8dp"/>
+
+    <TextView
+        android:id="@+id/tvAlarm"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ALARMA DE RIESGO ACTIVA"
+        android:textSize="20sp"
+        android:textColor="#FF0000"
+        android:visibility="gone"
+        android:layout_marginTop="8dp"/>
+
+    <Button
+        android:id="@+id/btnConnect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Conectar"
+        android:layout_marginTop="16dp"/>
+
+    <Button
+        android:id="@+id/btnDisconnect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Desconectar"
+        android:enabled="false"/>
+
+</LinearLayout>
