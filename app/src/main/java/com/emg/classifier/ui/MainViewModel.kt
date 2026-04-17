@@ -15,47 +15,37 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-/**
- * Estado de la UI consolidado.
- */
 data class UiState(
     val bleStatus:     String       = "Desconectado",
     val isConnected:   Boolean      = false,
     val prediction:    GestureClass = GestureClass.RELAJADO,
     val probabilities: FloatArray   = floatArrayOf(1f, 0f, 0f),
     val alarmActive:   Boolean      = false,
-    val packetsRx:     Int          = 0
+    val packetsRx:     Int          = 0,
+    val lastRawHex:    String       = ""   // muestra los últimos bytes recibidos en UI
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is UiState) return false
         return isConnected == other.isConnected &&
-               prediction  == other.prediction  &&
-               alarmActive == other.alarmActive  &&
-               packetsRx   == other.packetsRx    &&
-               probabilities.contentEquals(other.probabilities)
+                prediction  == other.prediction  &&
+                alarmActive == other.alarmActive  &&
+                packetsRx   == other.packetsRx    &&
+                lastRawHex  == other.lastRawHex   &&
+                probabilities.contentEquals(other.probabilities)
     }
     override fun hashCode() = 31 * prediction.hashCode() + probabilities.contentHashCode()
 }
 
-/**
- * ViewModel principal: orquesta BLE → Parser → Buffer → Windowing →
- * Preprocessing → ML → RiskDetector → Alarm.
- *
- * Toda la lógica de procesamiento corre en Dispatchers.Default
- * para no bloquear el hilo principal.
- */
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
-    // ── Dependencias ──────────────────────────────────────────────────────────
-    val bleManager    = BLEManager(application)
-    private val mlHelper    = MLHelper(application)
-    private val buffer      = CircularBuffer(capacity = 512)
-    private val windowing   = Windowing(buffer)
-    private val riskDetect  = RiskDetector()
-    val alarmCtrl     = AlarmController(application)
+    val bleManager   = BLEManager(application)
+    private val mlHelper   = MLHelper(application)
+    private val buffer     = CircularBuffer(capacity = 512)
+    private val windowing  = Windowing(buffer)
+    private val riskDetect = RiskDetector()
+    val alarmCtrl    = AlarmController(application)
 
-    // ── Estado de UI ──────────────────────────────────────────────────────────
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
@@ -66,21 +56,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         observeRawPackets()
     }
 
-    // ── Observar estado BLE ───────────────────────────────────────────────────
-
     private fun observeBleState() {
         viewModelScope.launch {
             bleManager.bleState.collect { state ->
                 val (statusStr, connected) = when (state) {
-                    is BleState.Idle       -> "Desconectado"    to false
-                    is BleState.Scanning   -> "Escaneando..."   to false
-                    is BleState.Connecting -> "Conectando..."   to false
-                    is BleState.Connected  -> "Conectado"       to true
-                    is BleState.Error      -> "Error: ${state.message}" to false
+                    is BleState.Idle       -> "Desconectado"             to false
+                    is BleState.Scanning   -> "Escaneando..."            to false
+                    is BleState.Connecting -> "Conectando..."            to false
+                    is BleState.Connected  -> "Conectado"                to true
+                    is BleState.Error      -> "Error: ${state.message}"  to false
                 }
                 _uiState.update { it.copy(bleStatus = statusStr, isConnected = connected) }
-
-                // Al desconectar: resetear detección de riesgo y alarma
                 if (!connected) {
                     riskDetect.reset()
                     alarmCtrl.deactivate()
@@ -91,60 +77,83 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // ── Pipeline de procesamiento ─────────────────────────────────────────────
-
     private fun observeRawPackets() {
         viewModelScope.launch(Dispatchers.Default) {
             bleManager.rawPackets
                 .filterNotNull()
-                .collect { rawBytes ->
-                    processPacket(rawBytes)
-                }
+                .collect { rawBytes -> processPacket(rawBytes) }
         }
     }
 
     private fun processPacket(rawBytes: ByteArray) {
-        // 1. Parsear
-        val packet = parsePacket(rawBytes) ?: return
         packetsReceived++
 
-        // 2. Agregar al buffer circular
-        buffer.addAll(packet)
+        // Representación hex para mostrar en UI (debug)
+        val hexStr = rawBytes.joinToString(" ") { "%02X".format(it) }
 
-        // 3. Ventaneo: notificar que llegaron 10 muestras nuevas
-        windowing.onNewSamples(10) { window ->
-            // 4. Preprocesamiento
-            val preprocessed = preprocess(window)
+        // Inferencia simple basada en los bytes recibidos (sin modelo TFLite)
+        val result = inferFromRawBytes(rawBytes)
 
-            // 5. Inferencia ML
-            val result = mlHelper.infer(preprocessed.rectified)
+        // Detección de riesgo
+        val isRisk = riskDetect.evaluate(result)
+        if (isRisk && !alarmCtrl.isActive) alarmCtrl.activate()
+        else if (!isRisk && alarmCtrl.isActive) alarmCtrl.deactivate()
 
-            // 6. Detección de riesgo
-            val isRisk = riskDetect.evaluate(result)
+        _uiState.update { current ->
+            current.copy(
+                prediction    = result.predictedClass,
+                probabilities = result.probabilities,
+                alarmActive   = alarmCtrl.isActive,
+                packetsRx     = packetsReceived,
+                lastRawHex    = hexStr
+            )
+        }
 
-            // 7. Alarma
-            if (isRisk && !alarmCtrl.isActive) {
-                alarmCtrl.activate()
-            } else if (!isRisk && alarmCtrl.isActive) {
-                // Solo desactivar si la clase cambió (evita flicker)
-                if (result.predictedClass != GestureClass.PUNIO) {
-                    alarmCtrl.deactivate()
-                }
-            }
-
-            // 8. Actualizar UI (volver al hilo principal via StateFlow)
-            _uiState.update { current ->
-                current.copy(
-                    prediction    = result.predictedClass,
-                    probabilities = result.probabilities,
-                    alarmActive   = alarmCtrl.isActive,
-                    packetsRx     = packetsReceived
-                )
+        // También alimenta el pipeline de procesamiento si quieres usar windowing
+        val packet = parsePacket(rawBytes)
+        if (packet != null) {
+            buffer.addAll(packet)
+            windowing.onNewSamples(10) { window ->
+                val preprocessed = preprocess(window)
+                val mlResult = mlHelper.infer(preprocessed.rectified)
+                _uiState.update { it.copy(
+                    prediction    = mlResult.predictedClass,
+                    probabilities = mlResult.probabilities
+                )}
             }
         }
     }
 
-    // ── Acciones públicas ─────────────────────────────────────────────────────
+    /**
+     * Inferencia simple sin modelo TFLite.
+     * Reglas basadas en el primer byte del paquete recibido desde nRF Connect:
+     *   byte[0] == 0x01  →  Mano relajada
+     *   byte[0] == 0x02  →  Puño cerrado  (activa alarma si se sostiene)
+     *   byte[0] == 0x03  →  Pulgar arriba
+     *   cualquier otro   →  Mano relajada
+     *
+     * Cuando uses nRF Connect en el iPhone, envía manualmente estos bytes:
+     *   01        → simula mano relajada
+     *   02        → simula puño cerrado
+     *   03        → simula pulgar arriba
+     */
+    private fun inferFromRawBytes(bytes: ByteArray): PredictionResult {
+        val firstByte = bytes.firstOrNull()?.toInt()?.and(0xFF) ?: 0
+        return when (firstByte) {
+            0x02 -> PredictionResult(
+                GestureClass.PUNIO,
+                floatArrayOf(0.05f, 0.90f, 0.05f)
+            )
+            0x03 -> PredictionResult(
+                GestureClass.PULGAR,
+                floatArrayOf(0.05f, 0.05f, 0.90f)
+            )
+            else -> PredictionResult(
+                GestureClass.RELAJADO,
+                floatArrayOf(0.85f, 0.10f, 0.05f)
+            )
+        }
+    }
 
     fun startScan() {
         buffer.clear()
