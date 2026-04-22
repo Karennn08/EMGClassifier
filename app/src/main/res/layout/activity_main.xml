@@ -1,115 +1,162 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="#FAFAFA">
 
-    <TextView
-        android:id="@+id/tvBleStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="BLE: Desconectado"
-        android:textSize="18sp"/>
-
-    <TextView
-        android:id="@+id/tvPrediction"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Gesto: -"
-        android:textSize="22sp"
-        android:layout_marginTop="8dp"/>
-
-    <TextView
-        android:id="@+id/tvProbabilities"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Probabilidades: -"
-        android:layout_marginTop="4dp"/>
-
-    <TextView
-        android:id="@+id/tvLabelRelaxed"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Relajado"
-        android:textSize="12sp"
-        android:layout_marginTop="8dp"/>
-
-    <ProgressBar
-        android:id="@+id/pbRelaxed"
-        style="?android:attr/progressBarStyleHorizontal"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:max="100"/>
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
 
-    <TextView
-        android:id="@+id/tvLabelFist"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Puño cerrado"
-        android:textSize="12sp"
-        android:layout_marginTop="4dp"/>
+        <!-- Título -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="EMG Classifier"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp"/>
 
-    <ProgressBar
-        android:id="@+id/pbFist"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:max="100"/>
+        <!-- Estado BLE -->
+        <TextView
+            android:id="@+id/tvBleStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="BLE: Desconectado"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp"/>
 
-    <TextView
-        android:id="@+id/tvLabelThumb"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Pulgar arriba"
-        android:textSize="12sp"
-        android:layout_marginTop="4dp"/>
+        <!-- Botones -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
 
-    <ProgressBar
-        android:id="@+id/pbThumb"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:max="100"/>
+            <Button
+                android:id="@+id/btnConnect"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Conectar ESP32"
+                android:layout_marginEnd="8dp"/>
 
-    <TextView
-        android:id="@+id/tvPacketCount"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Paquetes: 0"
-        android:layout_marginTop="8dp"/>
+            <Button
+                android:id="@+id/btnDisconnect"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Desconectar"
+                android:enabled="false"/>
+        </LinearLayout>
 
-    <TextView
-        android:id="@+id/tvRawHex"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hex: (esperando datos...)"
-        android:textSize="11sp"
-        android:fontFamily="monospace"
-        android:layout_marginTop="4dp"/>
+        <!-- Separador -->
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="#DDDDDD" android:layout_marginBottom="12dp"/>
 
-    <TextView
-        android:id="@+id/tvAlarm"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="ALARMA DE RIESGO ACTIVA"
-        android:textSize="20sp"
-        android:textColor="#FF0000"
-        android:visibility="gone"
-        android:layout_marginTop="8dp"/>
+        <!-- ALARMA -->
+        <TextView
+            android:id="@+id/tvAlarm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="⚠️  ALARMA — Movimiento de riesgo detectado"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#D32F2F"
+            android:background="#FFEBEE"
+            android:padding="12dp"
+            android:gravity="center"
+            android:visibility="gone"
+            android:layout_marginBottom="12dp"/>
 
-    <Button
-        android:id="@+id/btnConnect"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Conectar"
-        android:layout_marginTop="16dp"/>
+        <!-- Predicción -->
+        <TextView
+            android:id="@+id/tvClass"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Gesto: REST"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp"/>
 
-    <Button
-        android:id="@+id/btnDisconnect"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Desconectar"
-        android:enabled="false"/>
+        <TextView
+            android:id="@+id/tvConfidence"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Confianza: 0 %"
+            android:textSize="16sp"
+            android:layout_marginBottom="4dp"/>
 
-</LinearLayout>
+        <TextView
+            android:id="@+id/tvPackets"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Paquetes: 0  |  Buffer: 0 muestras"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Separador -->
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="#DDDDDD" android:layout_marginBottom="12dp"/>
+
+        <!-- Barras de probabilidad — 7 clases -->
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="REST (clase 0)" android:textSize="14sp"/>
+        <ProgressBar android:id="@+id/pb0" style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="match_parent" android:layout_height="20dp"
+            android:max="100" android:layout_marginBottom="6dp"/>
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Palmar (clase 5)" android:textSize="14sp"/>
+        <ProgressBar android:id="@+id/pb1" style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="match_parent" android:layout_height="20dp"
+            android:max="100" android:layout_marginBottom="6dp"/>
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Lateral (clase 6)" android:textSize="14sp"/>
+        <ProgressBar android:id="@+id/pb2" style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="match_parent" android:layout_height="20dp"
+            android:max="100" android:layout_marginBottom="6dp"/>
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="WristFlex — ⚠️ RIESGO (clase 13)" android:textSize="14sp" android:textColor="#D32F2F"/>
+        <ProgressBar android:id="@+id/pb3" style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="match_parent" android:layout_height="20dp"
+            android:max="100" android:layout_marginBottom="6dp"/>
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="WristExt — ⚠️ RIESGO (clase 14)" android:textSize="14sp" android:textColor="#D32F2F"/>
+        <ProgressBar android:id="@+id/pb4" style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="match_parent" android:layout_height="20dp"
+            android:max="100" android:layout_marginBottom="6dp"/>
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="RadialDev (clase 15)" android:textSize="14sp"/>
+        <ProgressBar android:id="@+id/pb5" style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="match_parent" android:layout_height="20dp"
+            android:max="100" android:layout_marginBottom="6dp"/>
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="UlnarDev (clase 16)" android:textSize="14sp"/>
+        <ProgressBar android:id="@+id/pb6" style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="match_parent" android:layout_height="20dp"
+            android:max="100" android:layout_marginBottom="12dp"/>
+
+        <!-- Probabilidades en texto -->
+        <TextView
+            android:id="@+id/tvProbs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="12sp"
+            android:textColor="#444444"
+            android:fontFamily="monospace"
+            android:layout_marginTop="4dp"/>
+
+    </LinearLayout>
+</ScrollView>
